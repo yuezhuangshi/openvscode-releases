@@ -5,6 +5,7 @@ on:
       commit:
         description: 'Commit to release'
         required: true
+        default: release/webide
       quality:
         description: 'Quality'
         required: true
@@ -12,18 +13,16 @@ on:
         options:
         - insider
         - stable
-        default: insider
-      uploadRelease:
-        description: 'Create GitHub and DockerHub Release'
-        type: boolean
-        required: true
+        default: stable
   workflow_run:
     workflows: ["Insiders"]
     types: [completed]
 
 env:
-  QUALITY: ${{ github.event.inputs.quality || 'insider' }}
-  RELEASE_COMMIT: ${{ github.event.inputs.commit || 'main' }}
+  QUALITY: ${{ github.event.inputs.quality || 'stable' }}
+  RELEASE_COMMIT: ${{ github.event.inputs.commit || 'release/webide' }}
+  ALIYUN_OSS_ENDPOINT: "https://oss-cn-hongkong.aliyuncs.com"
+  ALIYUN_OSS_BUCKET: "genesis-webide"
 
 jobs:
   build-dependencies:
@@ -256,51 +255,16 @@ jobs:
           echo "::set-output name=version::${version}"
           echo "::set-output name=quality::${QUALITY}"
 
-      - name: Upload build artifact
+      - name: Upload build artifact to action
         uses: actions/upload-artifact@v3
         with:
           name: linux-${{ matrix.vscode_arch }}
           path: openvscode-server-*.tar.gz
 
-      # - name: Get previous job's status
-      #   uses: actions/github-script@v6
-      #   if: ${{ success() }}
-      #   id: lastrun
-      #   with:
-      #     script: |
-      #         const workflow_id = 12321422;
-      #         const isLastFailedRun = (await github.rest.actions.listWorkflowRuns({owner: "gitpod-io", repo: "openvscode-releases", workflow_id, per_page: 1, status: "completed"})).data.workflow_runs.filter(run => run.conclusion === "failure").length > 0;
-      #         const message = isLastFailedRun ? "failed" : "succeeded";
-      #         console.log(`The last workflow run ${message}`);
-      #         return message;
-      #     result-encoding: string
-      # - name: Slack Notification
-      #   if: ${{ (success() && steps.lastrun.outputs.result == 'failed') || failure() }}
-      #   uses: rtCamp/action-slack-notify@v2
-      #   env:
-      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      #     SLACK_COLOR: ${{ job.status }}
-
-  github-release:
-    needs: build
-    if: github.event.inputs.uploadRelease == 'true' || github.event.workflow_run.conclusion == 'success'
-    uses: ./.github/workflows/github-release.yml
-    with:
-      release_commit: ${{ needs.build.outputs.release_commit }}
-      version: ${{ needs.build.outputs.version }}
-      stable: ${{ needs.build.outputs.quality == 'stable' }}
-    secrets:
-      VSCODE_GITHUB_TOKEN: ${{ secrets.VSCODE_GITHUB_TOKEN }}
-      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-
-  docker-release:
-    needs: [github-release, build]
-    if: github.event.inputs.uploadRelease == 'true' || github.event.workflow_run.conclusion == 'success'
-    uses: ./.github/workflows/docker-release.yml
-    with:
-      version: ${{ needs.build.outputs.version }}
-      stable: ${{ needs.build.outputs.quality == 'stable' }}
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Upload build artifact to aliyun oss
+        uses: manyuanrong/setup-ossutil@v2.0
+        with:
+          endpoint: ${{ env.ALIYUN_OSS_ENDPOINT }}
+          access-key-id: ${{ secrets.ALIYUN_ACCESS_ID }}
+          access-key-secret: ${{ secrets.ALIYUN_ACCESS_SECRET }}
+      - run: ossutil cp -rf openvscode-server-*.tar.gz oss://${{ env.ALIYUN_OSS_BUCKET }}/artifacts/vscode-server/
