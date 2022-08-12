@@ -84,12 +84,12 @@ jobs:
         - vscode_arch: x64
           npm_arch: x64
           image: gitpod/openvscode-server-linux-build-agent:bionic-x64
-        - vscode_arch: arm64
-          npm_arch: arm64
-          image: gitpod/openvscode-server-linux-build-agent:stretch-arm64
-        - vscode_arch: armhf
-          npm_arch: armv7l
-          image: gitpod/openvscode-server-linux-build-agent:stretch-armhf
+        # - vscode_arch: arm64
+        #   npm_arch: arm64
+        #   image: gitpod/openvscode-server-linux-build-agent:stretch-arm64
+        # - vscode_arch: armhf
+        #   npm_arch: armv7l
+        #   image: gitpod/openvscode-server-linux-build-agent:stretch-armhf
 
     name: Build linux-${{ matrix.vscode_arch }}
     needs: build-dependencies
@@ -262,24 +262,24 @@ jobs:
           name: linux-${{ matrix.vscode_arch }}
           path: openvscode-server-*.tar.gz
 
-      - name: Get previous job's status
-        uses: actions/github-script@v6
-        if: ${{ success() }}
-        id: lastrun
-        with:
-          script: |
-              const workflow_id = 12321422;
-              const isLastFailedRun = (await github.rest.actions.listWorkflowRuns({owner: "gitpod-io", repo: "openvscode-releases", workflow_id, per_page: 1, status: "completed"})).data.workflow_runs.filter(run => run.conclusion === "failure").length > 0;
-              const message = isLastFailedRun ? "failed" : "succeeded";
-              console.log(`The last workflow run ${message}`);
-              return message;
-          result-encoding: string
-      - name: Slack Notification
-        if: ${{ (success() && steps.lastrun.outputs.result == 'failed') || failure() }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_COLOR: ${{ job.status }}
+      # - name: Get previous job's status
+      #   uses: actions/github-script@v6
+      #   if: ${{ success() }}
+      #   id: lastrun
+      #   with:
+      #     script: |
+      #         const workflow_id = 12321422;
+      #         const isLastFailedRun = (await github.rest.actions.listWorkflowRuns({owner: "gitpod-io", repo: "openvscode-releases", workflow_id, per_page: 1, status: "completed"})).data.workflow_runs.filter(run => run.conclusion === "failure").length > 0;
+      #         const message = isLastFailedRun ? "failed" : "succeeded";
+      #         console.log(`The last workflow run ${message}`);
+      #         return message;
+      #     result-encoding: string
+      # - name: Slack Notification
+      #   if: ${{ (success() && steps.lastrun.outputs.result == 'failed') || failure() }}
+      #   uses: rtCamp/action-slack-notify@v2
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      #     SLACK_COLOR: ${{ job.status }}
 
   github-release:
     needs: build
