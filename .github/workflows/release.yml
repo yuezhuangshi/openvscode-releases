@@ -21,8 +21,8 @@ on:
 env:
   QUALITY: ${{ github.event.inputs.quality || 'stable' }}
   RELEASE_COMMIT: ${{ github.event.inputs.commit || 'release/webide' }}
-  ALIYUN_OSS_ENDPOINT: "https://oss-cn-hongkong.aliyuncs.com"
-  ALIYUN_OSS_BUCKET: "genesis-webide"
+  ALIYUN_OSS_ENDPOINT: "https://oss-cn-beijing.aliyuncs.com"
+  ALIYUN_OSS_BUCKET: "jasper-webide"
 
 jobs:
   build-dependencies:
