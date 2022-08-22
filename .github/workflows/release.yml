@@ -218,6 +218,7 @@ jobs:
           ossutil cp -rf resources/     oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/resources/     --meta=Cache-Control:max-age=604800#Content-Encoding:
           ossutil cp -rf out/           oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/out/           --meta=Cache-Control:max-age=604800#Content-Encoding:
           ossutil cp -rf node_modules/  oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/node_modules/  --meta=Cache-Control:max-age=604800#Content-Encoding:
+          ossutil cp -rf extensions/    oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/extensions/    --meta=Cache-Control:max-age=604800#Content-Encoding:
 
       - name: Download playwright
         if: matrix.vscode_arch == 'x64'
