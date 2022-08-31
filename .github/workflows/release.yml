@@ -14,6 +14,14 @@ on:
         - insider
         - stable
         default: stable
+      bucket:
+        description: 'Aliyun oss bucket'
+        required: true
+        default: jasper-webide
+      endpoint:
+        description: 'Aliyun oss endpoint'
+        required: true
+        default: oss-accelerate.aliyuncs.com
   workflow_run:
     workflows: ["Insiders"]
     types: [completed]
@@ -21,6 +29,8 @@ on:
 env:
   QUALITY: ${{ github.event.inputs.quality || 'stable' }}
   RELEASE_COMMIT: ${{ github.event.inputs.commit || 'release/webide' }}
+  ALIYUN_OSS_BUCKET: ${{ github.event.inputs.bucket || 'jasper-webide' }}
+  ALIYUN_OSS_ENDPOINT: ${{ github.event.inputs.endpoint || 'oss-accelerate.aliyuncs.com' }}
 
 jobs:
   build-dependencies:
@@ -113,7 +123,7 @@ jobs:
       - name: Setup aliyun Ossutil
         uses: manyuanrong/setup-ossutil@v2.0
         with:
-          endpoint: ${{ secrets.ALIYUN_OSS_ENDPOINT }}
+          endpoint: ${{ env.ALIYUN_OSS_ENDPOINT }}
           access-key-id: ${{ secrets.ALIYUN_ACCESS_ID }}
           access-key-secret: ${{ secrets.ALIYUN_ACCESS_SECRET }}
 
@@ -213,10 +223,10 @@ jobs:
           set -e
           commitId=`cd ./openvscode-server && git log -1 --format='%H'`
           cd ./vscode-reh-web-linux-${{ matrix.vscode_arch }}
-          ossutil cp -rf resources/     oss://${{ secrets.ALIYUN_OSS_BUCKET }}/static/${commitId}/resources/     --meta=Cache-Control:max-age=604800#Content-Encoding:
-          ossutil cp -rf out/           oss://${{ secrets.ALIYUN_OSS_BUCKET }}/static/${commitId}/out/           --meta=Cache-Control:max-age=604800#Content-Encoding:
-          ossutil cp -rf node_modules/  oss://${{ secrets.ALIYUN_OSS_BUCKET }}/static/${commitId}/node_modules/  --meta=Cache-Control:max-age=604800#Content-Encoding:
-          ossutil cp -rf extensions/    oss://${{ secrets.ALIYUN_OSS_BUCKET }}/static/${commitId}/extensions/    --meta=Cache-Control:max-age=604800#Content-Encoding:
+          ossutil cp -rf resources/     oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/resources/     --meta=Cache-Control:max-age=604800#Content-Encoding:
+          ossutil cp -rf out/           oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/out/           --meta=Cache-Control:max-age=604800#Content-Encoding:
+          ossutil cp -rf node_modules/  oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/node_modules/  --meta=Cache-Control:max-age=604800#Content-Encoding:
+          ossutil cp -rf extensions/    oss://${{ env.ALIYUN_OSS_BUCKET }}/static/${commitId}/extensions/    --meta=Cache-Control:max-age=604800#Content-Encoding:
 
       # - name: Download playwright
       #   if: matrix.vscode_arch == 'x64'
@@ -284,4 +294,4 @@ jobs:
           path: openvscode-server-*.tar.gz
 
       - name: Upload build artifact to aliyun oss
-        run: ossutil cp -rf openvscode-server-*.tar.gz oss://${{ secrets.ALIYUN_OSS_BUCKET }}/artifacts/vscode-server/
+        run: ossutil cp -rf openvscode-server-*.tar.gz oss://${{ env.ALIYUN_OSS_BUCKET }}/artifacts/vscode-server/
